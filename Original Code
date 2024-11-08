@@ -19,14 +19,28 @@ class Customer:
         self.phone_number = phone_number
         self.loyalty_status = loyalty_status
 
-# Shopping Cart and Orders: OrderItem to handle e-book and quantity per order
+# User Account Management: Manages customer accounts and their order history
+class UserAccount:
+    def __init__(self, customer):
+        self.customer = customer
+        self.order_history = []
+
+    def add_order(self, order):
+        self.order_history.append(order)
+
+    def display_order_history(self):
+        print("Order History for " + self.customer.name + ":")
+        for order in self.order_history:
+            print("- Order on " + order.order_date + " with total: " + str(order.total_amount))
+
+# Shopping Cart Item: Represents an item in the shopping cart, including quantity and total price
 class OrderItem:
     def __init__(self, ebook, quantity):
         self.ebook = ebook
         self.quantity = quantity
         self.total_price = ebook.price * quantity
 
-# Shopping Cart and Orders: ShoppingCart for managing cart items
+# Shopping Cart: Manages items in the cart and calculates the total amount
 class ShoppingCart:
     def __init__(self):
         self.items = []
@@ -48,7 +62,25 @@ class ShoppingCart:
     def calculate_total(self):
         self.total_amount = sum(item.total_price for item in self.items)
 
-# Order Management: Order to handle order details, VAT, discounts, and invoicing
+# Discount Policy: Manages discount calculations based on customer loyalty and bulk purchases
+class DiscountPolicy:
+    def apply_discounts(self, order):
+        if order.customer.loyalty_status:
+            order.total_amount *= 0.9  # 10% discount for loyal customers
+        if len(order.order_items) >= 5:
+            order.total_amount *= 0.8  # 20% discount for bulk purchases (5 or more items)
+
+# Payment Processing: Handles payment logic for an order
+class Payment:
+    def __init__(self, order):
+        self.order = order
+        self.is_paid = False
+
+    def process_payment(self, payment_method):
+        self.is_paid = True
+        print("Payment of " + str(self.order.total_amount) + " processed using " + payment_method)
+
+# Order Management: Processes orders, applies VAT, calculates total, and generates invoices
 class Order:
     def __init__(self, customer, order_date):
         self.customer = customer
@@ -65,16 +97,6 @@ class Order:
         self.total_amount = sum(item.total_price for item in self.order_items)
         self.total_amount += self.total_amount * self.vat_rate
 
-    def apply_discounts(self):
-        # Loyalty discount
-        if self.customer.loyalty_status:
-            self.total_amount *= 0.9  # 10% discount for loyal customers
-        # Bulk purchase discount (20%) for 5 or more items
-        if len(self.order_items) >= 5:
-            self.total_amount *= 0.8
-        # Apply VAT on the discounted total
-        self.total_amount += self.total_amount * self.vat_rate
-
     def generate_invoice(self):
         print("Invoice for " + self.customer.name)
         print("Order Date: " + self.order_date)
@@ -89,13 +111,14 @@ class Order:
 
 # Main program logic simulating a customer session
 def main():
-    # Catalog of available e-books with more personalized titles
+    # Catalog of available e-books with personalized titles
     ebook1 = EBook("Atomic Habits", "James Clear", "2018", "Self-help", 20.99, "ISBN987")
     ebook2 = EBook("The Lean Startup", "Eric Ries", "2011", "Business", 30.00, "ISBN654")
     ebook3 = EBook("Deep Work", "Cal Newport", "2016", "Productivity", 25.50, "ISBN321")
 
     # Customer account creation with a custom name
     customer1 = Customer("Ahmed Khalifa", "ahmed@example.com", "987-654-3210", True)
+    user_account = UserAccount(customer1)
 
     # Shopping Cart operations: Adding items to cart, updating, and calculating total
     cart = ShoppingCart()
@@ -109,8 +132,17 @@ def main():
         order.add_item(item)
 
     # Applying discounts and generating invoice
-    order.apply_discounts()
-    order.generate_invoice()  # Prints the itemized invoice with discounts and VAT
+    discount_policy = DiscountPolicy()
+    discount_policy.apply_discounts(order)
+    order.generate_invoice()
+
+    # Adding order to user account history and processing payment
+    user_account.add_order(order)
+    payment = Payment(order)
+    payment.process_payment("Credit Card")
+
+    # Displaying order history for the customer
+    user_account.display_order_history()
 
 if __name__ == "__main__":
     main()
